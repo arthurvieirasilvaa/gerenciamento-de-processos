@@ -12,7 +12,7 @@
 
 #define MAX_FILE_LENGTH 50
 
-void imprimeArray(ArrayProgramas ***arr, int tamPm, int tamProg) {
+void imprimeArray(ArrayProgramas **arr, int tamPm) {
 
     printf("\nIMPRIMINDO OS ARRAYS DOS PROGRAMA!\n");
 
@@ -20,47 +20,40 @@ void imprimeArray(ArrayProgramas ***arr, int tamPm, int tamProg) {
 
         printf("PROCESSO SIMULADO %d:\n", i+1);
 
-        for(int j = 0; j < tamProg; j++) {
+        for(int j = 0; ; j++) {
             
-            printf("%c ", (*arr)[i][j].instrucao);
+            printf("%c ", arr[i][j].instrucao);
 
-            switch((*arr)[i][j].instrucao) {
-                case 'R':
-                printf("%s\n", (*arr)[i][j].novo_arquivo);
+            if(arr[i][j].instrucao == 'R') {
+                printf("%s\n", arr[i][j].novo_arquivo);
+            }
+
+            else if(arr[i][j].instrucao == 'S' || arr[i][j].instrucao == 'A' || arr[i][j].instrucao == 'D' || arr[i][j].instrucao == 'F') {
+                printf("%d\n", arr[i][j].n);
+            }
+
+            else if(arr[i][j].instrucao == 'E') {
                 break;
-                
-            case 'S':
-                printf("%d\n", (*arr)[i][j].n);
-                break;
-                
-            case 'A':
-                printf("%d\n", (*arr)[i][j].n);
-                break;
-                
-            case 'D':
-                printf("%d\n", (*arr)[i][j].n);
-                break;
-                
-            case 'F':
-                printf("%d\n", (*arr)[i][j].n);
-                break;
-            }   
+            }
         }
-
-        printf("\n");
     }
 }
     
-void atualizaVariavel(ProcessManager **pm, int n) {
-    (*pm)->cpu.valor = n;
+void atualizaVariavel(ProcessManager **pm, int tamPm, int n) {
+    printf("\nATUALIZANDO VARIÁVEL\n");
+    sleep(1);
+    (*pm)[tamPm-1].cpu.valor = n;
 }
 
-void somaVariavel(ProcessManager **pm, int n) {
-    (*pm)->cpu.valor += n;
+void somaVariavel(ProcessManager **pm, int tamPm, int n) {
+    printf("\nSOMANDO VARIÁVEL\n");
+    sleep(1);
+    (*pm)[tamPm-1].cpu.valor += n;
 }
 
-void subtraiVariavel(ProcessManager **pm, int n) {
-    (*pm)->cpu.valor -= n;
+void subtraiVariavel(ProcessManager **pm, int tamPm, int n) {
+    printf("\nSUBTRAINDO VARIÁVEL\n");
+    (*pm)[tamPm-1].cpu.valor -= n;
 }
 
 void bloqueiaProcessoSimulado() {
@@ -78,7 +71,7 @@ void criaNovoProcessoSimulado(int n) {
 void substituiPrograma() {    
 }
 
-void armazenarPrograma(ArrayProgramas ***arr, int tamPm, int *tamProg) {
+void armazenarPrograma(ArrayProgramas ***arr, int tamPm) {
     
     printf("\nLENDO PROGRAMA...\n");
     
@@ -91,28 +84,30 @@ void armazenarPrograma(ArrayProgramas ***arr, int tamPm, int *tamProg) {
         exit(1);
     }
 
-    while(fscanf(input, " %c", &((*arr)[tamPm-1][(*tamProg)-1].instrucao)) != EOF) {
+    int tamProg = 1;
+
+    while(fscanf(input, " %c", &((*arr)[tamPm-1][tamProg-1].instrucao)) != EOF) {
         
-        switch((*arr)[tamPm-1][(*tamProg)-1].instrucao) {
+        switch((*arr)[tamPm-1][tamProg-1].instrucao) {
             case 'R':
-                (*arr)[tamPm-1][(*tamProg)-1].novo_arquivo = (char*) malloc(MAX_FILE_LENGTH * sizeof(char));
-                fscanf(input, " %s", (*arr)[tamPm-1][(*tamProg)-1].novo_arquivo);
+                (*arr)[tamPm-1][tamProg-1].novo_arquivo = (char*) malloc(MAX_FILE_LENGTH * sizeof(char));
+                fscanf(input, " %s", (*arr)[tamPm-1][tamProg-1].novo_arquivo);
                 break;
                 
             case 'S':
-                fscanf(input, " %d", &((*arr)[tamPm-1][(*tamProg)-1].n));
+                fscanf(input, " %d", &((*arr)[tamPm-1][tamProg-1].n));
                 break;
                 
             case 'A':
-                fscanf(input, " %d", &((*arr)[tamPm-1][(*tamProg)-1].n));
+                fscanf(input, " %d", &((*arr)[tamPm-1][tamProg-1].n));
                 break;
                 
             case 'D':
-                fscanf(input, " %d", &((*arr)[tamPm-1][(*tamProg)-1].n));
+                fscanf(input, " %d", &((*arr)[tamPm-1][tamProg-1].n));
                 break;
                 
             case 'F':
-                fscanf(input, " %d", &((*arr)[tamPm-1][(*tamProg)-1].n));
+                fscanf(input, " %d", &((*arr)[tamPm-1][tamProg-1].n));
                 break;
                 
             case 'B':
@@ -127,8 +122,8 @@ void armazenarPrograma(ArrayProgramas ***arr, int tamPm, int *tamProg) {
                 exit(1);
         }
 
-        (*tamProg)++;
-        (*arr)[tamPm-1] = (ArrayProgramas*) realloc(*arr[tamPm-1], (*tamProg) * sizeof(ArrayProgramas));
+        tamProg++;
+        (*arr)[tamPm-1] = (ArrayProgramas*) realloc(*arr[tamPm-1], tamProg * sizeof(ArrayProgramas));
 
         // Verificando se a memória foi alocada corretamente:
         if(arr[tamPm-1] == NULL) {
@@ -140,37 +135,36 @@ void armazenarPrograma(ArrayProgramas ***arr, int tamPm, int *tamProg) {
     fclose(input);
 }
 
-void verificarInstrucao(char instrucao, ProcessManager **pm, int tamPm, ArrayProgramas ***arr, int j) {
+void verificarInstrucao(char instrucao, ProcessManager **pm, int tamPm, int i) {
 
-    printf("\nVERIFICANDO INSTRUÇÃO (R, S, A, D, F, B ou E)\n");
+    printf("\nVERIFICANDO INSTRUÇÃO %c\n", instrucao);
 
     int n;
     char *novo_arquivo = NULL;
 
-    printf("INSTRUÇÃO %c\n", instrucao);
     switch (instrucao) {
         case 'R':
-            strcpy(novo_arquivo, (*arr)[tamPm-1][j].novo_arquivo);
+            strcpy(novo_arquivo, (*pm)[tamPm-1].cpu.ponteiroPrograma[i].novo_arquivo);
             substituiPrograma();
             break;
         
         case 'S':
-            n = (*arr)[tamPm-1][j].n;
-            atualizaVariavel(pm, n);
+            n = (*pm)[tamPm-1].cpu.ponteiroPrograma[i].n;
+            atualizaVariavel(pm, tamPm, n);
             break;
         
         case 'A':
-            n = (*arr)[tamPm-1][j].n;
-            somaVariavel(pm, n);
+            n = (*pm)[tamPm-1].cpu.ponteiroPrograma[i].n;
+            somaVariavel(pm, tamPm, n);
             break;
         
         case 'D':
-            n = (*arr)[tamPm-1][j].n;
-            subtraiVariavel(pm, n);
+            n = (*pm)[tamPm-1].cpu.ponteiroPrograma[i].n;
+            subtraiVariavel(pm, tamPm, n);
             break;
         
         case 'F':
-            n = (*arr)[tamPm-1][j].n;
+            n = (*pm)[tamPm-1].cpu.ponteiroPrograma[i].n;
             break;
         
         case 'B':

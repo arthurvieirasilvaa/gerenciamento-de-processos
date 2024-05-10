@@ -19,6 +19,7 @@ void imprimeEstadoAtual(ProcessManager *pm, int tamPm) {
     for(int i = 0; i < tamPm; i++) {
 
         printf("TEMPO ATUAL: %d\n", pm[i].cpu.tempoAtual);
+        printf("Valor: %d\n", pm[i].cpu.valor);
         printf("PROCESSO EXECUTANDO: \n");
         printf("BLOQUEADO: \n");
         printf("Fila processos bloqueados: \n");

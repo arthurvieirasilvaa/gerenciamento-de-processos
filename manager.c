@@ -43,7 +43,7 @@ void inicializaEstruturasDeDados(ProcessManager **pm, int tamPm, ArrayProgramas 
     printf("ESTRUTURAS DE DADOS INICIALIZADA!\n");
 }
 
-void executaComandoQ(ProcessManager **pm, ArrayProgramas ***arr, int tamPm, int tamProg) {
+void executaComandoQ(ProcessManager **pm, int tamPm) {
 
     printf("\nEXECUTANDO COMANDO Q\n");
 
@@ -52,11 +52,11 @@ void executaComandoQ(ProcessManager **pm, ArrayProgramas ***arr, int tamPm, int 
     (*pm)[tamPm-1].cpu.contadorPrograma += 1;
     (*pm)[tamPm-1].cpu.tempoAtual += 1;
 
-    int i = (*pm)[tamPm-1].cpu.contadorPrograma - 1;
+    int i = (*pm)[tamPm-1].cpu.contadorPrograma;
 
-    comando = (*arr)[i][tamProg-1].instrucao;
+    comando = (*pm)[tamPm-1].cpu.ponteiroPrograma[i].instrucao;
 
-    verificarInstrucao(comando, pm, tamPm, arr, i);
+    verificarInstrucao(comando, pm, tamPm, i);
 }
 
 void substituiProcesso() {
@@ -82,13 +82,13 @@ void criaProcessoReporter() {
     Função utilizada para ler o comando enviado pelo Processo commander 
     (Processo principal) através do pipe:
 */
-void verificaComandoPipe(char comando, ProcessManager **pm, int *tamPm, ArrayProgramas ***arr, int *tamProg) {
+void verificaComandoPipe(char comando, ProcessManager **pm, int *tamPm) {
 
     printf("\nVERIFICANDO COMANDO %c\n", comando);
 
     switch (comando) {
         case 'Q':
-            executaComandoQ(pm, arr, (*tamPm), (*tamProg));
+            executaComandoQ(pm, (*tamPm));
             break;
         
         case 'U':

@@ -22,15 +22,9 @@ void lerComando() {
 
     // Verificando se a memória foi alocada corretamente:
     if(pm == NULL) {
-            printf("A memória não foi alocada corretamente!\n");
-            exit(1);
+        printf("A memória não foi alocada corretamente!\n");
+        exit(1);
     }
-
-    /*
-        Variável que especifica o tamanho do array que guarda um programa, isto é,
-        o número de instruções de um programa:
-    */
-    int tamProg = 1; 
 
     /*
     arr irá armazenar o programa de todos os processos simulados durante a execução:
@@ -39,8 +33,8 @@ void lerComando() {
         programa simulado.
     */
 
-    ArrayProgramas **arr = (ArrayProgramas**) malloc(tamPm * sizeof(ArrayProgramas*));
-    arr[tamPm-1] = (ArrayProgramas*) malloc(tamProg * sizeof(ArrayProgramas));
+    ArrayProgramas **arr = (ArrayProgramas**) malloc(1 * sizeof(ArrayProgramas*));
+    arr[tamPm-1] = (ArrayProgramas*) malloc(1 * sizeof(ArrayProgramas));
 
     // Verificando se a memória foi alocada corretamente:
     if(arr == NULL || arr[tamPm-1] == NULL) {
@@ -48,9 +42,14 @@ void lerComando() {
         exit(1);
     }
 
-    armazenarPrograma(&arr, tamPm, &tamProg); 
-    imprimeArray(&arr, tamPm, tamProg);
+    armazenarPrograma(&arr, tamPm); 
+
+    printf("%c %d\n", arr[0][0].instrucao, arr[0][0].n);
+
+    imprimeArray(arr, tamPm);
     inicializaEstruturasDeDados(&pm, tamPm, arr);
+    
+    printf("%c %d\n", (*pm[0].cpu.ponteiroPrograma).instrucao, (*pm[0].cpu.ponteiroPrograma).n);
 
     int fd[2];
 
@@ -108,7 +107,7 @@ void lerComando() {
                 exit(1);
             }
 
-            verificaComandoPipe(comando, &pm, &tamPm, &arr, &tamProg);
+            verificaComandoPipe(comando, &pm, &tamPm);
 
             int pid2 = fork();
 
@@ -132,7 +131,6 @@ void lerComando() {
                 // Lê o programa do primeiro Processo simulado:
                 //armazenarPrograma(&arr, tamPm, &tamProg); 
                 //imprimeArray(arr, tamPm, tamProg);
-                printf("TESTE\n");
             }
         }
     }while(comando != 'T');
