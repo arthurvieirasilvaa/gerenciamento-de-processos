@@ -31,3 +31,8 @@ typedef struct {
     int* estadoBloqueado;
     int* estadoExecutando;
 }ProcessManager;
+
+typedef struct no {
+    ProcessManager processo;
+    struct no *proximo;
+}No;

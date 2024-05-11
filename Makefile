@@ -1,7 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
+SRC_DIR = src
 
-SRCS = main.c commander.c simulado.c manager.c reporter.c
+SRCS = $(SRC_DIR)/main.c \
+       $(SRC_DIR)/commander.c \
+       $(SRC_DIR)/simulado.c \
+       $(SRC_DIR)/manager.c \
+       $(SRC_DIR)/reporter.c
 
 OBJS = $(SRCS:.c=.o)
 

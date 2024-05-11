@@ -1,0 +1,6 @@
+S 1
+A 40
+D 10
+B
+R programa2.txt
+E

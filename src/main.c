@@ -4,7 +4,7 @@
 #include <sys/wait.h>
 #include <time.h>
 
-#include "headers/commander.h"
+#include "../headers/commander.h"
 
 int main() {
     

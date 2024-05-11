@@ -1,10 +1,10 @@
-void imprimeArray(ArrayProgramas **arr, int);
+void imprimeArray(ArrayProgramas*);
 void atualizaVariavel(ProcessManager**, int, int);
 void somaVariavel(ProcessManager**, int, int);
 void subtraiVariavel(ProcessManager**, int, int);
 void bloqueiaProcessoSimulado();
 void terminaProcessoSimulado();
 void criaNovoProcessoSimulado(int);
-void substituiPrograma();
-void armazenarPrograma(ArrayProgramas***, int);
-void verificarInstrucao(char, ProcessManager**, int, int);
+void armazenarPrograma(ArrayProgramas**, char*);
+void substituiPrograma(ArrayProgramas**, ProcessManager**, char*, int);
+void verificarInstrucao(char, ProcessManager**, int, ArrayProgramas**, int, int);

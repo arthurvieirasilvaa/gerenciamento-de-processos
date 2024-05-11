@@ -5,8 +5,8 @@
 #include <sys/wait.h>
 #include <time.h>
 
-#include "headers/estruturasDeDados.h"
-#include "headers/reporter.h"
+#include "../headers/estruturasDeDados.h"
+#include "../headers/reporter.h"
 
 void imprimeEstadoAtual(ProcessManager *pm, int tamPm) {
 
@@ -14,9 +14,9 @@ void imprimeEstadoAtual(ProcessManager *pm, int tamPm) {
     printf("Estado sistema\n");
     printf("****************************************************************\n\n");
 
-    printf("CONTADOR DE PROGRAMA: %d\n", pm[tamPm-1].cpu.contadorPrograma);
-
     for(int i = 0; i < tamPm; i++) {
+
+        printf("CONTADOR DE PROGRAMA: %d\n", pm[i].cpu.contadorPrograma);
 
         printf("TEMPO ATUAL: %d\n", pm[i].cpu.tempoAtual);
         printf("Valor: %d\n", pm[i].cpu.valor);
