@@ -4,6 +4,11 @@ typedef struct {
     char *novo_arquivo;
 }ArrayProgramas;
 
+typedef struct no {
+    int indiceProcesso;
+    struct no *proximo;
+}No;
+
 typedef struct {
     ArrayProgramas *ponteiroPrograma;
     int contadorPrograma;
@@ -18,7 +23,7 @@ typedef struct {
     int *ponteiroContadorPrograma;
     int valor;
     int prioridade;
-    int estado;
+    char estado; // E (Executando), P (Pronto) ou B (Bloqueado)
     int tempoInicio;
     int cpuUsada;
 }TabelaPcb;
@@ -27,12 +32,7 @@ typedef struct {
     int tempo;
     CPU cpu;
     TabelaPcb* pcb;
-    int* estadoPronto;
-    int* estadoBloqueado;
-    int* estadoExecutando;
+    No *estadoPronto;
+    No *estadoBloqueado;
+    No *estadoExecutando;
 }ProcessManager;
-
-typedef struct no {
-    ProcessManager processo;
-    struct no *proximo;
-}No;

@@ -5,12 +5,14 @@ D 23
 A 55
 F 1
 R programa1.txt
-F 1
+F 3
+B
 R programa2.txt
-F 1
+F 4
+B
 R programa3.txt
 F 1
 R programa4.txt
-F 1
+F 2
 R programa5.txt
 E

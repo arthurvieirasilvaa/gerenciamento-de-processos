@@ -11,30 +11,49 @@
 #include "../headers/manager.h"
 #include "../headers/simulado.h"
 
-void lerComando() {
+void lerComando(int pid1, int pid2, int *fd, ArrayProgramas *arr, int indiceProcesso, ProcessManager *pm, int tamPcb) {
+    
+    char comando = ' ';
+    
+    // Lemos comandos da entrada padrão enquanto o comando 'T' não for digitado:
+    while(comando != 'T') {
 
-    int tamPm = 1;
-    ProcessManager *pm = (ProcessManager*) malloc(tamPm * sizeof(ProcessManager));
-    int indiceSimulado = 0;
+        // Processo commander (Processo principal):
+        if(pid1 != 0) {
+            scanf(" %c", &comando);
+            fflush(stdin);
+                                    
+            // Envia o comando para o Processo manager (Processo filho) através do pipe:
+            if(write(fd[1], &comando, sizeof(comando)) == -1) {
+                exit(1);
+            }
 
-    ArrayProgramas *arr = (ArrayProgramas*) malloc(sizeof(ArrayProgramas));
+            sleep(1); // Espera 1 segundo para ler o próximo comando
+        }
 
+        // Processo manager (Processo filho):
+        else if (pid1 == 0 && pid2 != 0) {
 
-    No *removido, *fila = NULL;
-
-
-
-
-    // Verificando se a memória foi alocada corretamente:
-    if(pm == NULL || arr == NULL) {
-        printf("A memória não foi alocada corretamente!\n");
-        exit(1);
+            /*
+                Lê o comando enviado pelo Processo commander (Processo principal) 
+                através do pipe:
+            */
+            if(read(fd[0], &comando, sizeof(comando)) == -1) {
+                exit(1);
+            }
+                
+            verificaComandoPipe(comando, &arr, &indiceProcesso, pm, &tamPcb);  
+        }
     }
+}
+
+// Função utilizada para ler o comando que será digitado pelo usuário na entrada padrão:
+void executarCommander(ProcessManager pm, int tamPcb, int indiceProcesso, ArrayProgramas *arr) {
     
     int fd[2];
 
     if(pipe(fd) == -1) {
-        printf("An error occurred with pipe\n");
+        printf("Ocorreu um erro ao criar o pipe\n");
         exit(1);
     }
 
@@ -42,7 +61,7 @@ void lerComando() {
     int pid2;
 
     if(pid1 == -1) {
-        printf("An error occurred with fork\n");
+        printf("Ocorreu um erro ao realizar um fork\n");
         exit(1);
     }
 
@@ -61,74 +80,28 @@ void lerComando() {
             exit(1);
         }
     }
+    
+    pm.pcb[indiceProcesso].estado = 'E'; // O Processo simulado agora está executando
+    // Colocamos o índice desse Processo simulaod no array de estadoExecutando:
+    inserirNaFila(&pm.estadoExecutando, indiceProcesso);
 
-    // Dentro do Processo manager, inicializamos a estrutura de dados do tipo ProcessManager:
-    if(pid1 == 0 && pid2 != 0) {
-
-        armazenarPrograma(&arr, "init.txt");
-        inicializaEstruturasDeDados(&pm, indiceSimulado, arr);
-        imprimeArray(arr);
-    }
-
-    char comando = ' ';
-
-    // Lemos comandos da entrada padrão enquanto o comando 'T' não for digitado:
-    while(comando != 'T') {
-
-        // Processo commander (Processo principal):
-        if(pid1 != 0) {
-
-            // Envia um sinal para o Processo manager (Processo filho) pausar a sua execução:
-            kill(pid1, SIGSTOP);
-
-            printf("Digite um comando: ");
-            scanf(" %c", &comando);
-            fflush(stdin);
-                        
-            // Envia o comando para o Processo manager (Processo filho) através do pipe:
-            if(write(fd[1], &comando, sizeof(comando)) == -1) {
-                exit(1);
-            }
-
-            // Envia um sinal para o Processo manager (Processo filho) continuar a sua execução:
-            kill(pid1, SIGCONT);
-            sleep(1); // Espera 1 segundo para ler o próximo comando
-        }
-
-        // Processo manager (Processo filho):
-        else if(pid1 == 0 && pid2 != 0) {
-
-            /*
-                Lê o comando enviado pelo Processo commander (Processo principal) 
-                através do pipe:
-            */
-            if(read(fd[0], &comando, sizeof(comando)) == -1) {
-                exit(1);
-            }
-
-            verificaComandoPipe(comando, &arr, &indiceSimulado, &pm, &tamPm);      
-        }
-
-        //if(comando == 'T') {
-            //break;
-        //}
-    }
+    lerComando(pid1, pid2, fd, arr, indiceProcesso, &pm, tamPcb);
 
     // Processo commander (Processo principal):
     if(pid1 != 0) {
-
-        // Envia um sinal para o Processo manager (Processo filho) encerrar a sua execução:
-        kill(pid1, SIGKILL); 
-        wait(NULL); // Espera o Processo manager (Processo filho) terminar a sua execução
+        wait(NULL);
         close(fd[1]); // Fecha a parte de escrita do pipe
     }
 
     // Processo manager (Processo filho):
-    else {
-
+    else if(pid1 == 0 && pid2 != 0){
+        wait(NULL);
         close(fd[0]); // Fecha a parte de leitura do pipe
     }
 
-    free(pm);
-    free(arr);
+    // Processo simulado (Processo filho):
+    else {
+        close(fd[0]); // Fecha a parte de leitura do pipe
+        close(fd[1]); // Fecha a parte de escrita do pipe
+    }
 }

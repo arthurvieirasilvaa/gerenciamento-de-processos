@@ -1,0 +1,5 @@
+B
+S 100
+F 2
+programa5.txt
+E

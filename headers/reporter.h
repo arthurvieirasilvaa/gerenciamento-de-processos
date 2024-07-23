@@ -1,1 +1,1 @@
-void imprimeEstadoAtual(ProcessManager*, int);
+void imprimeEstadoAtual(ProcessManager);

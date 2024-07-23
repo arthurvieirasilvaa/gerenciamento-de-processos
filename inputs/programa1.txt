@@ -1,6 +1,8 @@
-S 1
-A 40
-D 10
+S 100
+D 100
+A 2
+F 1
 B
-R programa2.txt
+R programa3.txt
+B
 E

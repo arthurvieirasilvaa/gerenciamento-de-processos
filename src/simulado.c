@@ -4,118 +4,108 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <time.h>
-#include "string.h"
+#include <signal.h>
 
 #include "../headers/estruturasDeDados.h"
+#include "../headers/manager.h"
 #include "../headers/simulado.h"
 
 #define MAX_FILE_LENGTH 50
 
-void imprimeArray(ArrayProgramas *arr) {
+// Função utilizada para atualizar o valor da variável inteira para n (instrução S):
+void atualizaVariavel(ProcessManager *pm, int indiceProg) {
+    int n = (*pm).cpu.ponteiroPrograma[indiceProg].n;
+    (*pm).cpu.valor = n;
+}
 
-    printf("\nIMPRIMINDO O ARRAY DO PROGRAMA!\n");
+// Função utilizada para somar n na variável inteira (instrução A):
+void somaVariavel(ProcessManager *pm, int indiceProg) {
+    int n = (*pm).cpu.ponteiroPrograma[indiceProg].n;
+    (*pm).cpu.valor += n;
+}
 
-    for(int i = 0; ; i++) {
-            
-        if(arr[i].instrucao == 'R') {
-            printf("%c %s\n", arr[i].instrucao, arr[i].novo_arquivo);
-        }
+// Função utilizada para subtrair n na variável inteira (instrução D):
+void subtraiVariavel(ProcessManager *pm, int indiceProg) {
+    int n = (*pm).cpu.ponteiroPrograma[indiceProg].n;
+    (*pm).cpu.valor -= n;
+}
 
-        else if(arr[i].instrucao == 'S' || arr[i].instrucao == 'A' || arr[i].instrucao == 'D' || arr[i].instrucao == 'F') {
-            printf("%c %d\n", arr[i].instrucao, arr[i].n);
-        }
+// Função utilizada para bloquear o processo simulado (instrução B):
+void bloqueiaProcessoSimulado(ProcessManager *pm, int *indiceProcesso) {
+    (*pm).pcb[*indiceProcesso].estado = 'B'; // Bloquea o Processo atual
+    
+    // Removemos o índice do processo atual da fila de estadoExecutando:
+    No *removido = NULL;
+    removido = removerDaFila(&(*pm).estadoExecutando);
 
-        else if(arr[i].instrucao == 'B') {
-            printf("%c\n", arr[i].instrucao);
-        }
+    if(removido == NULL) {
+        printf("Não há nenhum processo pronto para ser executado!\n");
+        printf("Digite U para desbloquear o primeiro processo bloqueado para a fila de prontos\n");
+    }
 
-        else {
-            printf("%c\n", arr[i].instrucao);
-            break;
-        }
+    else {
+        // Adicionamos o índice do processo que foi bloqueado na fila de estadoBloqueado: 
+        inserirNaFila(&(*pm).estadoBloqueado, *indiceProcesso);
     }
 }
 
-void adicionaProcessoNaFila(No **fila, ProcessManager pm) {
+// Função utilizada para terminar o processo simulado (instrução E):
+void terminaProcessoSimulado(ProcessManager *pm, int indiceProcesso) {
+    kill((*pm).pcb[indiceProcesso].idProcesso, SIGKILL);
+}
 
-    No *aux = (No*) malloc(sizeof(No));
-    No *novo_processo = (No*) malloc(sizeof(No));
+// Função utilizada para criar um novo processo simulado (instrução F):
+void criaNovoProcessoSimulado(ProcessManager *pm, int *tamPcb, int indiceProcesso, int indiceProg) {
+    int n = (*pm).cpu.ponteiroPrograma[indiceProg].n;
+    int contadorProgAux = (*pm).cpu.contadorPrograma;
 
-    // Verificando se a memória foi alocada corretamente:
-    if(aux == NULL || novo_processo == NULL) {
-        printf("A memória não foi alocada corretamente!\n");
+    (*tamPcb)++; // Incrementamos o tamanho da variável tamPcb
+
+    pm->pcb = (TabelaPcb*) realloc(pm->pcb, *tamPcb * sizeof(TabelaPcb)); 
+    int pid = fork();
+    
+    if(pid == -1) {
+        printf("Ocorreu um erro ao realizar um fork\n");
         exit(1);
     }
 
-    novo_processo->processo = pm;
-    novo_processo->proximo = NULL;
+    // Processo principal:
+    if(pid != 0) {
 
-    if(*fila == NULL) {
-        *fila = novo_processo;
+        (*pm).cpu.contadorPrograma += n - 1;
     }
 
+    // Processo filho:
     else {
-        aux = *fila;
 
-        while(aux->proximo) {
-            aux = aux->proximo;
-        }
+        indiceProcesso++; // Incrementamos a variável indiceProcesso
+        inicializaEstruturasDeDados(pm, *tamPcb, indiceProcesso, (*pm).cpu.ponteiroPrograma);
 
-        aux->proximo = novo_processo;
+        // Inicializamos as estruturas de dados do novo Processo simulado
+        (*pm).pcb[indiceProcesso].idProcesso = getpid();
+        (*pm).pcb[indiceProcesso].idProcessoPai = getppid();
+        (*pm).cpu.contadorPrograma = contadorProgAux;
+        
+        // O tempo de início é inicializado com o tempo atual:
+        (*pm).pcb[indiceProcesso].tempoInicio = (*pm).cpu.tempoAtual;
+        
+        (*pm).cpu.fatiaTempo = 0;
+        
+        // O índice do novo programa é colocado no array de estadoPronto:
+        inserirNaFila(&(*pm).estadoPronto, indiceProcesso);
     }
 }
 
-No *removeProcessoDaFila(No **fila) {
-
-    No *remove = NULL;
-
-    if(*fila) {
-        remove = *fila;
-        *fila = remove->proximo;
-    }
-
-    else {
-        printf("Não há nenhum processo na fila\n");
-    }
-
-    return remove;
-}
-    
-void atualizaVariavel(ProcessManager **pm, int indiceSimulado, int n) {
-    (*pm)[indiceSimulado].cpu.valor = n;
-}
-
-void somaVariavel(ProcessManager **pm, int indiceSimulado, int n) {
-    (*pm)[indiceSimulado].cpu.valor += n;
-}
-
-void subtraiVariavel(ProcessManager **pm, int indiceSimulado, int n) {
-    (*pm)[indiceSimulado].cpu.valor -= n;
-}
-
-void bloqueiaProcessoSimulado() {
-
-}
-
-void terminaProcessoSimulado() {
-
-}
-
-void criaNovoProcessoSimulado(int n) {
-    
-    n = 0;
-    printf("\nTESTE: %d\n", n);
-}
-
-
+/* 
+    Função utilizada para armazenar o programa de um Processo simulado em um 
+    vetor, com uma instrução para cada posição:
+*/  
 void armazenarPrograma(ArrayProgramas **arr, char *entrada) {
         
     FILE *input;
-    char caminho[100] = "./inputs/";
-    strcat(caminho, entrada);
+    char caminho[100] = "./inputs/"; // Caminho onde estão localizados os arquivos de entrada
+    strcat(caminho, entrada); // Concatenamos a variável caminho com o nome do arquivo de entrada
     input = fopen(caminho, "r"); // Abrimos o arquivo de entrada do Processo simulado
-
-    printf("ARMAZENANDO O PROGRAMA: %s\n", caminho);
 
     // Se o arquivo de entrada não for encontrado:
     if(input == NULL) {
@@ -123,46 +113,64 @@ void armazenarPrograma(ArrayProgramas **arr, char *entrada) {
         exit(1);
     }
 
-    int tamProg = 1;
+    int tamProg = 1; // Variável usada para representar o tamanho do array do programa
 
+    // Lemos o arquivo de entrada até o final:
     while(fscanf(input, " %c", &((*arr)[tamProg-1].instrucao)) != EOF) {
         
         switch((*arr)[tamProg-1].instrucao) {
+            // Se a linha tiver uma instrução R:
             case 'R':
                 (*arr)[tamProg-1].novo_arquivo = (char*) malloc(MAX_FILE_LENGTH * sizeof(char));
+                // Armazenamos também o nome do arquivo do programa do novo Processo simulado:
                 fscanf(input, " %s", (*arr)[tamProg-1].novo_arquivo);
                 break;
-                
+            
+            // Se a linha tiver uma instrução S:
             case 'S':
+                // Armazenamos também um inteiro n:
                 fscanf(input, " %d", &((*arr)[tamProg-1].n));
                 break;
-                
+            
+            // Se a linha tiver uma instrução A:
             case 'A':
+                // Armazenamos também um inteiro n:
                 fscanf(input, " %d", &((*arr)[tamProg-1].n));
                 break;
-                
+            
+            // Se a linha tiver uma instrução D:
             case 'D':
+                // Armazenamos também um inteiro n:
                 fscanf(input, " %d", &((*arr)[tamProg-1].n));
                 break;
-                
+            
+            // Se a linha tiver uma instrução F:
             case 'F':
+                // Armazenamos também um inteiro n:
                 fscanf(input, " %d", &((*arr)[tamProg-1].n));
                 break;
-                
+            
+            // Se a linha tiver uma instrução B:
             case 'B':
+                // Só há a instrução nessa linha do programa:
                 break;
-                
+            
+            // Se a linha tiver uma instrução E:
             case 'E':
+                // Só há a instrução nessa linha do programa:
                 break;
-                
+            
+            // Se tiver outra instrução:
             default:
                 printf("Invalid command! Please, check the input file.\n");
                 fclose(input);
                 exit(1);
         }
 
+        // Se ainda não chegamos na última instrução (E):
         if((*arr)[tamProg-1].instrucao != 'E') {
-            tamProg++;
+            tamProg++; // Incrementamos o tamanho do array do programa em 1 unidade
+            // Fazemos a realocação do arr (para que o seu tamanho aumente 1 unidade):
             (*arr) = (ArrayProgramas*) realloc((*arr), tamProg * sizeof(ArrayProgramas));
 
             // Verificando se a memória foi alocada corretamente:
@@ -173,63 +181,81 @@ void armazenarPrograma(ArrayProgramas **arr, char *entrada) {
         }
     }
 
-    fclose(input);
+    fclose(input); // Fechamos o arquivo de entrada lido
 }
 
-void substituiPrograma(ArrayProgramas **arr, ProcessManager **pm, char *novo_arquivo, int indiceSimulado) {    
+/* 
+    Função utilizada para substituir o programa do Processo simulado por um novo programa
+    (instrução R):
+*/
+void substituiPrograma(ArrayProgramas **arr, ProcessManager *pm, int indiceProg) {   
 
-    printf("\nSUBSTITUINDO PROGRAMA ATUAL\n");
-    armazenarPrograma(arr, novo_arquivo);
-    pm[indiceSimulado]->cpu.ponteiroPrograma = *arr;
-    imprimeArray(*arr);
-
-    (*pm)[indiceSimulado].cpu.contadorPrograma = 0; 
-}
-
-void verificarInstrucao(char instrucao, ProcessManager **pm, int tamPm, ArrayProgramas **arr, int indiceProg, int indiceSimulado) {
-
-    printf("\nTESTE: %d\n", tamPm);
-    int n;
     char *novo_arquivo = (char*) malloc(MAX_FILE_LENGTH * sizeof(char));
 
     // Se o arquivo de entrada não for encontrado:
     if(novo_arquivo == NULL) {
-        printf("Input file was not found!\n");
+        printf("O arquivo de entrada não foi encontrado!\n");
         exit(1);
     }
-    
+
+    // Copiamos o nome do novo arquivo para a variável novo_arquivo:
+    strcpy(novo_arquivo, (*pm).cpu.ponteiroPrograma[indiceProg].novo_arquivo);
+
+    armazenarPrograma(arr, novo_arquivo); // Armazenamos o programa do novo arquivo
+    // A variável ponteiroPrograma agora aponta para o programa do novo arquivo:
+    (*pm).cpu.ponteiroPrograma = *arr; 
+   
+    /* 
+        Contador de Programa é colocado em -1 pois, ao retornarmos para a função
+        executaProximaInstrucao() ele será incrementado novamente tendo, assim, 
+        o valor 0:
+    */
+    (*pm).cpu.contadorPrograma = -1;
+    (*pm).cpu.valor = 0; // Reseta o valor da variável inteira
+
+    free(novo_arquivo); // Liberamos a memória alocada dinamicamente
+}
+
+/*
+    Função utilizada para verificar qual instrução será executada no momento no programa
+    do Processo simulado:
+*/
+void verificarInstrucao(char instrucao, ProcessManager *pm, int *tamPcb, ArrayProgramas **arr, int indiceProg, int indiceProcesso) {    
     switch (instrucao) {
+        // Se a instrução executada for R:
         case 'R':
-            strcpy(novo_arquivo, (*pm)[indiceSimulado].cpu.ponteiroPrograma[indiceProg].novo_arquivo);
-            printf("Arquivo: %s\n", novo_arquivo);
-            substituiPrograma(arr, pm, novo_arquivo, indiceSimulado);
+            substituiPrograma(arr, pm, indiceProg);
             break;
         
+        // Se a instrução executada for S:
         case 'S':
-            n = (*pm)[indiceSimulado].cpu.ponteiroPrograma[indiceProg].n;
-            atualizaVariavel(pm, indiceSimulado, n);
+            atualizaVariavel(pm, indiceProg);
             break;
-        
+
+        // Se a instrução executada for A:
         case 'A':
-            n = (*pm)[indiceSimulado].cpu.ponteiroPrograma[indiceProg].n;
-            somaVariavel(pm, indiceSimulado, n);
+            somaVariavel(pm, indiceProg);
             break;
         
+        // Se a instrução executada for D:
         case 'D':
-            n = (*pm)[indiceSimulado].cpu.ponteiroPrograma[indiceProg].n;
-            subtraiVariavel(pm, indiceSimulado, n);
+            subtraiVariavel(pm, indiceProg);
             break;
         
+        // Se a instrução executada for F:
         case 'F':
-            n = (*pm)[indiceSimulado].cpu.ponteiroPrograma[indiceProg].n;
+            criaNovoProcessoSimulado(pm, tamPcb, indiceProcesso, indiceProg);
             break;
         
+        // Se a instrução executada for B:
         case 'B':
-            bloqueiaProcessoSimulado();
+            bloqueiaProcessoSimulado(pm, &indiceProcesso);
             break;
         
+        // Se a instrução executada for E:
         case 'E':
-            terminaProcessoSimulado();
+            terminaProcessoSimulado(pm, indiceProcesso);
+            (*tamPcb)--;
             break;
     }
 }

@@ -1,0 +1,8 @@
+B
+S 1
+D 1
+R programa3.txt
+A 20
+B
+R programa4.txt
+E
