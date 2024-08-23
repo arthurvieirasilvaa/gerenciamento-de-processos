@@ -34,18 +34,21 @@ void subtraiVariavel(ProcessManager *pm, int indiceProg) {
 void bloqueiaProcessoSimulado(ProcessManager *pm, int *indiceProcesso) {
     (*pm).pcb[*indiceProcesso].estado = 'B'; // Bloquea o Processo atual
     
-    // Removemos o índice do processo atual da fila de estadoExecutando:
-    No *removido = NULL;
-    removido = removerDaFila(&(*pm).estadoExecutando);
+    // Verifica se há algum processo pronto para ser executado:
+    if((*pm).estadoPronto) {
+        (*pm).pcb[*indiceProcesso].estado = "B";
+        
+        // Removemos o índice do processo atual da fila de estadoExecutando:
+        No *removido = NULL;
+        removido = removerDaFila(&(*pm).estadoExecutando);
 
-    if(removido == NULL) {
-        printf("Não há nenhum processo pronto para ser executado!\n");
-        printf("Digite U para desbloquear o primeiro processo bloqueado para a fila de prontos\n");
-    }
-
-    else {
         // Adicionamos o índice do processo que foi bloqueado na fila de estadoBloqueado: 
         inserirNaFila(&(*pm).estadoBloqueado, *indiceProcesso);
+    }   
+    
+    else {
+        printf("Não há nenhum processo pronto para ser executado!\n");
+        printf("Digite U para desbloquear o primeiro processo bloqueado para a fila de prontos\n");
     }
 }
 
@@ -202,6 +205,7 @@ void substituiPrograma(ArrayProgramas **arr, ProcessManager *pm, int indiceProg)
     strcpy(novo_arquivo, (*pm).cpu.ponteiroPrograma[indiceProg].novo_arquivo);
 
     armazenarPrograma(arr, novo_arquivo); // Armazenamos o programa do novo arquivo
+    
     // A variável ponteiroPrograma agora aponta para o programa do novo arquivo:
     (*pm).cpu.ponteiroPrograma = *arr; 
    

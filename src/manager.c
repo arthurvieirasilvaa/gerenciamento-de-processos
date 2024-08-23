@@ -11,6 +11,10 @@
 #include "../headers/manager.h"
 #include "../headers/reporter.h"
 
+/*
+    Função utilizada para adicionar um índice de um processo simulado no final
+    de uma das filas (estadoPronto, estadoBloqueado ou estadoExecutando):
+*/
 void inserirNaFila(No **fila, int indiceInserido) {
     No *aux, *novo = (No*) malloc(sizeof(No));
 
@@ -36,16 +40,16 @@ void inserirNaFila(No **fila, int indiceInserido) {
     }
 }
 
+/*
+    Função utilizada para remover um índice de um processo simulado do início
+    de uma das filas (estadoPronto, estadoBloqueado ou estadoExecutando):
+*/
 No *removerDaFila(No **fila) {
     No *removido = NULL;
 
     if(*fila) {
         removido = *fila;
         *fila = removido->proximo;
-    }
-
-    else {
-        printf("A fila está vazia!");
     }
 
     return removido;
@@ -73,7 +77,7 @@ void inicializaEstruturasDeDados(ProcessManager *pm, int tamPcb, int indiceProce
     (*pm).pcb[indiceProcesso].idProcessoPai = getppid();
     pm->pcb[indiceProcesso].ponteiroContadorPrograma = NULL;
     (*pm).pcb[indiceProcesso].valor = 0;
-    (*pm).pcb[indiceProcesso].prioridade = indiceProcesso;
+    (*pm).pcb[indiceProcesso].prioridade = 20;
     (*pm).pcb[indiceProcesso].estado = 'P';
     (*pm).pcb[indiceProcesso].tempoInicio = (*pm).tempo;
     (*pm).pcb[indiceProcesso].cpuUsada = 0;
@@ -83,6 +87,10 @@ void inicializaEstruturasDeDados(ProcessManager *pm, int tamPcb, int indiceProce
     pm->estadoBloqueado = NULL;
 }
 
+/*
+    Função utilizada para escalonar os processos utilizando escalonamento por
+    prioridades:
+*/
 void escalonar(ProcessManager *pm, int *indiceProcesso) {
     
     int prioridade = (*pm).pcb[*indiceProcesso].prioridade;
@@ -95,7 +103,7 @@ void escalonar(ProcessManager *pm, int *indiceProcesso) {
         // Procura pelo processo com maior prioridade:
         while(pm->estadoPronto) {
             
-            if((*pm).pcb[*indiceProcesso].prioridade > prioridade) {
+            if((*pm).pcb[(*pm).estadoPronto->indiceProcesso].prioridade > prioridade) {
                 novoIndiceProcesso = (*pm).estadoPronto->indiceProcesso;
             }
 
@@ -116,6 +124,15 @@ void escalonar(ProcessManager *pm, int *indiceProcesso) {
             inserirNaFila(&(*pm).estadoExecutando, *indiceProcesso);
             removido = removerDaFila(&(*pm).estadoPronto);
         }
+
+
+        /*
+            Caso contrário, apenas diminuímos o valor da prioridade do processo
+            atual em uma unidade:
+        */
+        else {
+            (*pm).pcb[*indiceProcesso].prioridade -= 1;
+        }
     }   
 
     // Liberamos a memória alocada dinamicamente:
@@ -134,11 +151,7 @@ void executarProximaInstrucao(ProcessManager *pm, ArrayProgramas **arr, int indi
     // Variável utilizada para armazenar qual a instrução atual do array do programa:
     char instrucao = (*pm).cpu.ponteiroPrograma[indiceProg].instrucao;
     
-    verificarInstrucao(instrucao, pm, &tamPcb, arr, indiceProg, indiceProcesso); 
-    printf("Executando instrução %c...\n", instrucao);
-
-    escalonar(pm, &indiceProcesso);
-    printf("Escalonando...\n");
+    verificarInstrucao(instrucao, pm, &tamPcb, arr, indiceProg, indiceProcesso);
 
     // Incrementamos o contador de programa e o tempo atual:
     (*pm).cpu.contadorPrograma += 1;
@@ -156,7 +169,7 @@ void desbloquearProcesso(ProcessManager *pm) {
     removido = removerDaFila(&(*pm).estadoBloqueado);
 
     if(removido == NULL) {
-        printf("Não há nenhum processo na fila de bloqueados!");
+        printf("Não há nenhum processo na fila de bloqueados!\n");
     }
 
     else {
@@ -185,7 +198,7 @@ void criaProcessoReporter(ProcessManager pm) {
     // Processo reporter (Processo filho):
     else {
         imprimeEstadoAtual(pm);
-        kill(getpid(), SIGKILL); 
+        kill(getpid(), SIGKILL);
     }
 }
 
@@ -220,4 +233,7 @@ void verificaComandoPipe(char comando, ArrayProgramas **arr, int *indiceProcesso
         default:
             printf("Invalid command! Please try again...\n");
     }
+
+    (*pm).cpu.fatiaTempo += 1;
+    (*pm).pcb[*indiceProcesso].cpuUsada += 1;
 }

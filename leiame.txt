@@ -1,0 +1,4 @@
+Instruções para compilação e execução:
+
+=> make - para compilar;
+=> ./tp - para executar.

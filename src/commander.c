@@ -11,7 +11,7 @@
 #include "../headers/manager.h"
 #include "../headers/simulado.h"
 
-void lerComando(int pid1, int pid2, int *fd, ArrayProgramas *arr, int indiceProcesso, ProcessManager *pm, int tamPcb) {
+void lerComando(int pid, int *fd, ArrayProgramas *arr, int indiceProcesso, ProcessManager *pm, int tamPcb) {
     
     char comando = ' ';
     
@@ -19,7 +19,7 @@ void lerComando(int pid1, int pid2, int *fd, ArrayProgramas *arr, int indiceProc
     while(comando != 'T') {
 
         // Processo commander (Processo principal):
-        if(pid1 != 0) {
+        if(pid != 0) {
             scanf(" %c", &comando);
             fflush(stdin);
                                     
@@ -32,7 +32,7 @@ void lerComando(int pid1, int pid2, int *fd, ArrayProgramas *arr, int indiceProc
         }
 
         // Processo manager (Processo filho):
-        else if (pid1 == 0 && pid2 != 0) {
+        else {
 
             /*
                 Lê o comando enviado pelo Processo commander (Processo principal) 
@@ -42,7 +42,11 @@ void lerComando(int pid1, int pid2, int *fd, ArrayProgramas *arr, int indiceProc
                 exit(1);
             }
                 
-            verificaComandoPipe(comando, &arr, &indiceProcesso, pm, &tamPcb);  
+            verificaComandoPipe(comando, &arr, &indiceProcesso, pm, &tamPcb);
+
+            // Realiza o escalonamento dos processos:
+            escalonar(pm, &indiceProcesso);
+            
         }
     }
 }
@@ -57,51 +61,35 @@ void executarCommander(ProcessManager pm, int tamPcb, int indiceProcesso, ArrayP
         exit(1);
     }
 
-    int pid1 = fork(); // Processo commander cria o Processo manager
-    int pid2;
+    int pid = fork(); // Processo commander cria o Processo manager
 
-    if(pid1 == -1) {
+    if(pid == -1) {
         printf("Ocorreu um erro ao realizar um fork\n");
         exit(1);
     }
 
-    if(pid1 != 0) {
+    if(pid != 0) {
         close(fd[0]); // Fecha a parte de leitura do pipe no Processo comander
     }
 
     else {
-    
         close(fd[1]); // Fecha a parte de escrita do pipe no Processo manager
-
-        pid2 = fork(); // Processo manager cria o primeiro Processo simulado
-
-        if(pid2 == -1) {
-            printf("An error occurred with fork\n");
-            exit(1);
-        }
     }
     
     pm.pcb[indiceProcesso].estado = 'E'; // O Processo simulado agora está executando
     // Colocamos o índice desse Processo simulaod no array de estadoExecutando:
     inserirNaFila(&pm.estadoExecutando, indiceProcesso);
 
-    lerComando(pid1, pid2, fd, arr, indiceProcesso, &pm, tamPcb);
+    lerComando(pid, fd, arr, indiceProcesso, &pm, tamPcb);
 
     // Processo commander (Processo principal):
-    if(pid1 != 0) {
+    if(pid != 0) {
         wait(NULL);
         close(fd[1]); // Fecha a parte de escrita do pipe
     }
 
     // Processo manager (Processo filho):
-    else if(pid1 == 0 && pid2 != 0){
-        wait(NULL);
-        close(fd[0]); // Fecha a parte de leitura do pipe
-    }
-
-    // Processo simulado (Processo filho):
     else {
         close(fd[0]); // Fecha a parte de leitura do pipe
-        close(fd[1]); // Fecha a parte de escrita do pipe
     }
 }
